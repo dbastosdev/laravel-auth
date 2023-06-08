@@ -9,7 +9,7 @@ https://laravel.com/docs/10.x/authentication#protecting-routes
 https://laravel.com/docs/10.x/installation
 https://laravel.com/docs/10.x/starter-kits#laravel-breeze
 
-#### Configuração inicial para todos os projetos: 
+#### = Configuração inicial para todos os projetos: =
 
 1. Mysql: Criar base de dados (schema) chamada basic-auth
 2.  Editar arquivo .env para conectar ao banco de dados
@@ -60,7 +60,10 @@ Após rodar esses comandos uma estrutura completa de autenticação é implement
 * tela e implementação de login/logout;
 * tela e implementação de registro;
 * tela e implamentação de crud perfil de usuário;
+* controle de quantiadades de tentativas de login durante um intervalo de tempo;
 * Recuperação de senha com e-mail. 
+
+#### = Recuperação de senha com e-mail: =
 
 Configuração para recuperar senha:
 https://laravel.com/docs/10.x/mail 
@@ -89,3 +92,23 @@ Depois de configurado os campos .env com os dados abaixo, seja de qual provedor 
 * MAIL_FROM_ADDRESS=meu-email@gmail.com
 * MAIL_FROM_NAME="${APP_NAME}"
 
+São outros mecanismos de autenticação por sessão do Larvel por meio de starter kits:
+Laravel Jetstream e Laravel Fortify.
+
+#### = Confirmação de senha ao criar usuário: =
+
+Para configurar o e-mail de registro de confirmação com o Laravel Breeze é necessário
+configurar um trait manualmente ao User conforme as orientações abaixo:
+https://laracasts.com/discuss/channels/laravel/laravel-breeze-sending-registration-emails-email-customizations
+
+Com a simples implementação abaixo em user é possível confirmar a conta somente após confirmação via e-mail:
+
+```php
+use Illuminate\Contracts\Auth\MustVerifyEmail;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Foundation\Auth\User as Authenticatable;
+use Illuminate\Notifications\Notifiable;
+use Laravel\Sanctum\HasApiTokens;
+
+class User extends Authenticatable implements MustVerifyEmail
+```
