@@ -112,3 +112,17 @@ use Laravel\Sanctum\HasApiTokens;
 
 class User extends Authenticatable implements MustVerifyEmail
 ```
+
+#### = Editando e traduzindo as mensagens da aplicação: =
+
+Usar o seguinte módulo do Laravel: https://github.com/lucascudo/laravel-pt-BR-localization
+
+Passo a passo:
+
+```shell
+php artisan lang:publish
+composer require lucascudo/laravel-pt-br-localization --dev
+php artisan vendor:publish --tag=laravel-pt-br-localization
+```
+Altere Linha 86 do arquivo config/app.php para:
+'locale' => 'pt_BR'
