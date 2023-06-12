@@ -126,3 +126,123 @@ php artisan vendor:publish --tag=laravel-pt-br-localization
 ```
 Altere Linha 86 do arquivo config/app.php para:
 'locale' => 'pt_BR'
+
+* Não funcionou de forma adequada. 
+
+#### = Implementando RBAC (role based access control): =
+https://laravel.com/docs/10.x/eloquent-relationships#retrieving-intermediate-table-columns
+https://laravel.com/docs/10.x/migrations
+
+A estratégia é simples. Criar uma tabela com papéis que quando relacionados ao User em um relacionamento N:N permita gerir melhor as ações dentro do sistema. 
+O objetivo é criar diversos papéis e esses serem associados a um ou mais usuários do sistema. 
+
+1. Criando a tabela de Roles: Tabela se cria com plural.
+```shell
+php artisan make:migration create_roles_table
+```
+2. Configurar a tabela de roles
+```php
+    public function up(): void
+    {
+        Schema::create('roles', function (Blueprint $table) {
+            $table->id();
+            $table->timestamps();
+            $table->string('authority');
+        });
+    }
+```
+3. Rodar a migration e popular o banco.
+```shel
+php artisan migrate
+```
+4.Configurar a tabela de roles / User - relacionamento a nível de tabela
+```shell
+php artisan make:migration create_roles_users_table
+```
+5. Definir o relacionamento a nível de tabela na migration: 
+```php
+    public function up(): void
+    {
+        Schema::create('roles_users', function (Blueprint $table) {
+            $table->id();
+            $table->timestamps();
+            // relacionamento da entidade user
+            $table->unsignedBigInteger('user_id');
+            $table->foreign('user_id')->references('id')->on('users');
+            // relacionamento da entidade role
+            $table->unsignedBigInteger('role_id');
+            $table->foreign('role_id')->references('id')->on('roles');
+        });
+    }
+```
+6. Criar Model de role: 
+
+````shell
+php artisan make:model Role
+````
+
+7. Criar o relacionamento de Role em User e vice versa: 
+
+```php
+// Método inserido em User: 
+
+    /**
+     * Relacionamento de model entre User e Role com tabela intermediária.
+     */
+     use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+     
+    public function roles(): BelongsToMany
+    {
+        // Relacionar com a tabela criada anteriormente - roles_users
+        return $this->belongsToMany(Role::class, 'roles_users', 'user_id', 'role_id');
+    }
+
+// Relacionamento inverso definido em Role:
+    use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+
+    protected $fillable = [
+        'authority',
+    ];
+
+    /**
+     * Relacionamento inverso Role x User.
+     */
+    public function users(): BelongsToMany
+    {
+        // Relacionar com a tabela criada anteriormente - roles_users
+        return $this->belongsToMany(User::class, 'roles_users', 'user_id', 'role_id');
+    }
+```
+8. Testando o relacionamento:
+
+* Cria dados fakes direto no banco. Na aplicação, criar um model para fazer essa interação. 
+* Cria rota para retornar dados por meio de um usuário.
+````php
+use App\Models\User;
+use App\Models\Role;
+
+// Rota relacionamento N:N User x Role
+Route::get('/user-role', function () {
+
+    $user = User::find(1); // Seleciona o primeiro usuário da tabela
+    return $user->roles()->first(); // Seleciona e retorna o primeiro registro de papel
+    return response()->json($user->roles); // retorna todos os roles associados a um usuário
+
+    $role = Role::find(1); // Pega o primeiro papel
+    return response()->json($role->users); // retorna todos os roles associados a um usuário
+});
+````
+Os papéis na aplicação poderão servir para alguma autorização. Envolvendo Gates e Policies.
+Para relacionar pode fazer: 
+
+````php
+    #Relaciona dados
+    // resgata um user
+    $user = User::with('roles')->find(2);
+    // cria um role
+    $newRole = Role::create(['authority'=>'writer']);
+    // relaciona
+    $user->roles()->save($newRole);
+    return response()->json($user->roles);
+````
+mas é melhor usar um model
